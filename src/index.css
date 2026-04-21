@@ -6,8 +6,7 @@
   --color-cta: #F97316;
   --color-background: #F0F9FF;
   --color-text: #0C4A6E;
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Work Sans', sans-serif;
+  --font-sans: 'Inter', sans-serif;
 }
 
 * {
@@ -15,11 +14,7 @@
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: 'Inter', sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
 }
