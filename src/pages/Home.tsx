@@ -1,7 +1,305 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const TW_PHRASES = [
+  "Amplify potential.",
+  "Scale operations.",
+  "Accelerate growth.",
+  "Eliminate busywork.",
+  "Unify systems.",
+  "Empower teams.",
+]
+
+interface WorkflowNode {
+  id: string
+  x: number
+  y: number
+  label: string
+  type: 'trigger' | 'action' | 'ai' | 'tool'
+  color: string
+}
+interface WorkflowEdge { from: string; to: string }
+interface WorkflowDef { nodes: WorkflowNode[]; edges: WorkflowEdge[] }
+
+const WORKFLOWS: Record<'it' | 'sec' | 'dev' | 'sales', WorkflowDef> = {
+  it: {
+    nodes: [
+      { id: 'n1', x: 80,  y: 120, label: 'New Hire Trigger',    type: 'trigger', color: '#6366f1' },
+      { id: 'n2', x: 280, y: 120, label: 'AI Agent',            type: 'ai',      color: '#8b5cf6' },
+      { id: 'n3', x: 480, y: 60,  label: 'Add to Channel',      type: 'action',  color: '#10b981' },
+      { id: 'n4', x: 480, y: 180, label: 'Update Profile',      type: 'action',  color: '#10b981' },
+      { id: 't1', x: 200, y: 270, label: 'Anthropic Chat',      type: 'tool',    color: '#f59e0b' },
+      { id: 't2', x: 340, y: 270, label: 'Postgres',            type: 'tool',    color: '#f59e0b' },
+      { id: 't3', x: 160, y: 330, label: 'Entra ID',            type: 'tool',    color: '#f59e0b' },
+      { id: 't4', x: 300, y: 330, label: 'Jira',               type: 'tool',    color: '#f59e0b' },
+    ],
+    edges: [
+      { from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n2', to: 'n4' },
+      { from: 'n2', to: 't1' }, { from: 'n2', to: 't2' }, { from: 'n2', to: 't3' }, { from: 'n2', to: 't4' },
+    ],
+  },
+  sec: {
+    nodes: [
+      { id: 'n1', x: 80,  y: 120, label: 'Alert Trigger',       type: 'trigger', color: '#ef4444' },
+      { id: 'n2', x: 280, y: 120, label: 'Security AI',         type: 'ai',      color: '#8b5cf6' },
+      { id: 'n3', x: 480, y: 60,  label: 'Create Ticket',       type: 'action',  color: '#10b981' },
+      { id: 'n4', x: 480, y: 180, label: 'Page Team',           type: 'action',  color: '#10b981' },
+      { id: 't1', x: 200, y: 270, label: 'VirusTotal',          type: 'tool',    color: '#f59e0b' },
+      { id: 't2', x: 340, y: 270, label: 'Splunk',              type: 'tool',    color: '#f59e0b' },
+    ],
+    edges: [
+      { from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n2', to: 'n4' },
+      { from: 'n2', to: 't1' }, { from: 'n2', to: 't2' },
+    ],
+  },
+  dev: {
+    nodes: [
+      { id: 'n1', x: 80,  y: 120, label: 'Slack Command',       type: 'trigger', color: '#6366f1' },
+      { id: 'n2', x: 280, y: 120, label: 'DevBot',              type: 'ai',      color: '#8b5cf6' },
+      { id: 'n3', x: 480, y: 60,  label: 'GitHub PR',           type: 'action',  color: '#10b981' },
+      { id: 'n4', x: 480, y: 180, label: 'AWS Deploy',          type: 'action',  color: '#10b981' },
+      { id: 't1', x: 270, y: 270, label: 'OpenAI',              type: 'tool',    color: '#f59e0b' },
+    ],
+    edges: [
+      { from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n2', to: 'n4' },
+      { from: 'n2', to: 't1' },
+    ],
+  },
+  sales: {
+    nodes: [
+      { id: 'n1', x: 80,  y: 120, label: 'G2 Review Trigger',   type: 'trigger', color: '#6366f1' },
+      { id: 'n2', x: 280, y: 120, label: 'Sentiment AI',        type: 'ai',      color: '#8b5cf6' },
+      { id: 'n3', x: 480, y: 60,  label: 'CRM Update',          type: 'action',  color: '#10b981' },
+      { id: 'n4', x: 480, y: 180, label: 'Email Notify',        type: 'action',  color: '#10b981' },
+      { id: 't1', x: 270, y: 270, label: 'GPT-4',               type: 'tool',    color: '#f59e0b' },
+    ],
+    edges: [
+      { from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n2', to: 'n4' },
+      { from: 'n2', to: 't1' },
+    ],
+  },
+}
+
+const SERVICES = [
+  {
+    id: 'workflow',
+    title: 'Business Process Automation',
+    desc: 'Eliminate manual bottlenecks with self-healing, event-driven architectures. We build workflows that run 24/7 without supervision.',
+    icon: 'settings-2',
+    color: 'blue',
+    colorHex: '#3b82f6',
+    features: ['Custom API Integrations', 'Error Handling', 'Instant Sync', 'Cron Jobs'],
+  },
+  {
+    id: 'ai',
+    title: 'AI Integration',
+    desc: 'Harness the power of artificial intelligence to supercharge your business. From chatbots to predictive analytics, we integrate cutting-edge AI solutions tailored to your needs.',
+    icon: 'brain-circuit',
+    color: 'orange',
+    colorHex: '#f97316',
+    features: ['Smart Chatbots', 'Predictive Analytics', 'Document Processing', 'Decision Automation'],
+  },
+  {
+    id: 'web',
+    title: 'Web Design & App Development',
+    desc: 'Pixel-perfect, high-performance interfaces built on modern frameworks. We design digital experiences that convert visitors into loyal customers.',
+    icon: 'globe',
+    color: 'emerald',
+    colorHex: '#10b981',
+    features: ['React / Next.js', 'Headless CMS', 'PWA Support', 'Interactive UI'],
+  },
+  {
+    id: 'social',
+    title: 'Social Media Management',
+    desc: 'Unified data warehousing and pipelines that turn scattered information into actionable business intelligence. Secure, scalable, and compliant.',
+    icon: 'share-2',
+    color: 'purple',
+    colorHex: '#a855f7',
+    features: ['Content Scheduling', 'Audience Analytics', 'Trend Monitoring', 'Multi-platform Sync'],
+  },
+]
+
+const SERVICE_THEMES: Record<string, { bg: string; text: string; btn: string; border: string }> = {
+  blue:    { bg: 'bg-blue-50/50',    text: 'text-blue-500',    btn: 'bg-blue-600 hover:bg-blue-700',    border: 'border-blue-200' },
+  orange:  { bg: 'bg-orange-50/50',  text: 'text-orange-500',  btn: 'bg-orange-600 hover:bg-orange-700',  border: 'border-orange-200' },
+  emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-500', btn: 'bg-emerald-600 hover:bg-emerald-700', border: 'border-emerald-200' },
+  purple:  { bg: 'bg-purple-50/50',  text: 'text-purple-500',  btn: 'bg-purple-600 hover:bg-purple-700',  border: 'border-purple-200' },
+}
+
+const BLOG_POSTS = [
+  {
+    title: 'The Future of Autonomous Agents in Enterprise',
+    category: 'AI Technology',
+    readTime: '5 min read',
+    excerpt: 'Manual data entry is obsolete. Learn how multi-agent systems are self-organizing to enrich leads, schedule meetings, and update deal stages without human intervention.',
+    author: 'Alex Morgan',
+    role: 'Head of Product',
+    date: 'Oct 24, 2023',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+    color: 'blue',
+  },
+  {
+    title: 'Designing for Depth: The Spatial Web Revolution',
+    category: 'Design System',
+    readTime: '7 min read',
+    excerpt: 'Spatial interfaces are becoming the norm. Here is how to implement depth cues, glassmorphism, and 3D transforms without sacrificing performance metrics.',
+    author: 'Sarah Chen',
+    role: 'Lead Designer',
+    date: 'Nov 02, 2023',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
+    color: 'purple',
+  },
+  {
+    title: 'Scalable Infrastructure for High-Volume Automation',
+    category: 'Engineering',
+    readTime: '12 min read',
+    excerpt: 'When 1,000 requests become 1 million. A deep dive into event-driven architecture, queue management, and preventing bottlenecks in your workflow.',
+    author: 'David Park',
+    role: 'CTO',
+    date: 'Nov 15, 2023',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
+    color: 'orange',
+  },
+]
 
 export default function Home() {
-  const [_activeTab, setActiveTab] = useState<'it' | 'sec' | 'dev' | 'sales'>('it')
+  const [activeTab, setActiveTab] = useState<'it' | 'sec' | 'dev' | 'sales'>('it')
+  const [serviceIndex, setServiceIndex] = useState(0)
+  const [blogIndex, setBlogIndex] = useState(0)
+  const twRef = useRef<HTMLSpanElement>(null)
+  const canvasRef = useRef<SVGSVGElement>(null)
+
+  // Derived values
+  const blogPost = BLOG_POSTS[blogIndex]
+  const prevBlog = () => setBlogIndex((i) => (i - 1 + BLOG_POSTS.length) % BLOG_POSTS.length)
+  const nextBlog = () => setBlogIndex((i) => (i + 1) % BLOG_POSTS.length)
+  const service = SERVICES[serviceIndex]
+  const theme = SERVICE_THEMES[service.color]
+
+  // Feature 1: Typewriter animation
+  useEffect(() => {
+    let phraseIdx = 0
+    let charIdx = 0
+    let deleting = false
+    let timer: ReturnType<typeof setTimeout>
+
+    function tick() {
+      const phrase = TW_PHRASES[phraseIdx]
+      if (!deleting) {
+        charIdx++
+        if (twRef.current) twRef.current.textContent = phrase.slice(0, charIdx)
+        if (charIdx === phrase.length) {
+          deleting = true
+          timer = setTimeout(tick, 1800)
+          return
+        }
+      } else {
+        charIdx--
+        if (twRef.current) twRef.current.textContent = phrase.slice(0, charIdx)
+        if (charIdx === 0) {
+          deleting = false
+          phraseIdx = (phraseIdx + 1) % TW_PHRASES.length
+        }
+      }
+      timer = setTimeout(tick, deleting ? 50 : 100)
+    }
+
+    timer = setTimeout(tick, 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Feature 2: UnicornStudio initialization
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).UnicornStudio?.isInitialized) return
+    const script = document.createElement('script')
+    script.src = 'https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js'
+    script.onload = () => {
+      const us = (window as any).UnicornStudio
+      if (us && !us.isInitialized) {
+        us.init()
+        us.isInitialized = true
+      }
+    }
+    ;(document.head || document.body).appendChild(script)
+  }, [])
+
+  // Feature 3: Roadmap scroll animation
+  useEffect(() => {
+    function updateRoadmap() {
+      const track = document.getElementById('roadmap-track')
+      const content = document.getElementById('rm-content')
+      const header = document.getElementById('rm-header')
+      const bar = document.getElementById('roadmap-progress-bar')
+      if (!track || !bar) return
+      const trackRect = track.getBoundingClientRect()
+      const viewH = window.innerHeight
+      const scrolled = Math.max(0, viewH * 0.6 - trackRect.top)
+      const total = trackRect.height
+      const pct = Math.min(100, Math.max(0, (scrolled / total) * 100))
+      bar.style.height = pct + '%'
+      if (trackRect.top < viewH * 0.8) {
+        header?.classList.add('is-visible')
+        content?.classList.add('is-visible')
+      }
+    }
+    window.addEventListener('scroll', updateRoadmap, { passive: true })
+    updateRoadmap()
+    return () => window.removeEventListener('scroll', updateRoadmap)
+  }, [])
+
+  // Feature 4: Service carousel auto-rotate
+  useEffect(() => {
+    const id = setInterval(() => {
+      setServiceIndex((i) => (i + 1) % SERVICES.length)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Feature 5: Workflow canvas rendering
+  useEffect(() => {
+    const svg = canvasRef.current
+    if (!svg) return
+    const workflow = WORKFLOWS[activeTab]
+    const svgNS = 'http://www.w3.org/2000/svg'
+    while (svg.firstChild) svg.removeChild(svg.firstChild)
+    const nodeMap = Object.fromEntries(workflow.nodes.map(n => [n.id, n]))
+    workflow.edges.forEach(({ from, to }) => {
+      const a = nodeMap[from]
+      const b = nodeMap[to]
+      if (!a || !b) return
+      const line = document.createElementNS(svgNS, 'line')
+      line.setAttribute('x1', String(a.x + 60))
+      line.setAttribute('y1', String(a.y + 18))
+      line.setAttribute('x2', String(b.x))
+      line.setAttribute('y2', String(b.y + 18))
+      line.setAttribute('stroke', '#cbd5e1')
+      line.setAttribute('stroke-width', '2')
+      line.setAttribute('stroke-dasharray', '6 3')
+      svg.appendChild(line)
+    })
+    workflow.nodes.forEach(node => {
+      const g = document.createElementNS(svgNS, 'g')
+      g.setAttribute('transform', `translate(${node.x},${node.y})`)
+      const rect = document.createElementNS(svgNS, 'rect')
+      rect.setAttribute('width', '120')
+      rect.setAttribute('height', '36')
+      rect.setAttribute('rx', '8')
+      rect.setAttribute('fill', node.color + '22')
+      rect.setAttribute('stroke', node.color)
+      rect.setAttribute('stroke-width', '1.5')
+      g.appendChild(rect)
+      const text = document.createElementNS(svgNS, 'text')
+      text.setAttribute('x', '60')
+      text.setAttribute('y', '22')
+      text.setAttribute('text-anchor', 'middle')
+      text.setAttribute('font-size', '11')
+      text.setAttribute('fill', node.color)
+      text.setAttribute('font-weight', '600')
+      text.textContent = node.label
+      g.appendChild(text)
+      svg.appendChild(g)
+    })
+  }, [activeTab])
 
   return (
     <>
@@ -35,7 +333,7 @@ export default function Home() {
                     Simplify workflows.
                     <div className="w-full mt-2">
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#f0942e] to-[#e28b2b]"><span
-                                className="" id="tw-content-aura">Amplify potential</span> <span
+                                className="" id="tw-content-aura" ref={twRef}>Amplify potential</span> <span
                                 className="font-light text-[#f0942e] text-left"
                                 style={{ WebkitTextFillColor: "#f0942e", animation: "blink 1s step-end infinite" }}>
                                 |
@@ -108,7 +406,7 @@ export default function Home() {
                 <div className="grid grid-cols-2 md:grid-cols-4 w-full border-b border-white/10">
                     {/* Tab 1: IT Ops */}
                     <button onClick={() => setActiveTab('it')} id="tab-it"
-                        className="tab-btn relative group p-6 text-left transition-all duration-300 hover:bg-white/5 border-t-2 tab-active">
+                        className={`tab-btn relative group p-6 text-left transition-all duration-300 hover:bg-white/5 border-t-2 ${activeTab === 'it' ? 'border-[#f0942e] tab-active' : 'border-transparent'}`}>
                         <h3 className="text-white font-medium text-sm mb-1">IT Ops can</h3>
                         <div className="flex items-center gap-2 text-xs text-orange-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -125,7 +423,7 @@ export default function Home() {
 
                     {/* Tab 2: Sec Ops */}
                     <button onClick={() => setActiveTab('sec')} id="tab-sec"
-                        className="tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 border-transparent hover:bg-white/5">
+                        className={`tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 hover:bg-white/5 ${activeTab === 'sec' ? 'border-[#f0942e] tab-active' : 'border-transparent'}`}>
                         <h3 className="text-white font-medium text-sm mb-1">Sec Ops can</h3>
                         <div className="flex items-center gap-2 text-xs text-blue-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -144,7 +442,7 @@ export default function Home() {
 
                     {/* Tab 3: Dev Ops */}
                     <button onClick={() => setActiveTab('dev')} id="tab-dev"
-                        className="tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 border-transparent hover:bg-white/5">
+                        className={`tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 hover:bg-white/5 ${activeTab === 'dev' ? 'border-[#f0942e] tab-active' : 'border-transparent'}`}>
                         <h3 className="text-white font-medium text-sm mb-1">Dev Ops can</h3>
                         <div className="flex items-center gap-2 text-xs text-purple-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -160,7 +458,7 @@ export default function Home() {
 
                     {/* Tab 4: Sales */}
                     <button onClick={() => setActiveTab('sales')} id="tab-sales"
-                        className="tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 border-transparent hover:bg-white/5">
+                        className={`tab-btn relative group p-6 text-left transition-all duration-300 border-t-2 hover:bg-white/5 ${activeTab === 'sales' ? 'border-[#f0942e] tab-active' : 'border-transparent'}`}>
                         <h3 className="text-white font-medium text-sm mb-1">Sales can</h3>
                         <div className="flex items-center gap-2 text-xs text-green-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -186,7 +484,7 @@ export default function Home() {
                     </div>
 
                     {/* SVG Layer for Connections */}
-                    <svg id="connections-layer"
+                    <svg id="connections-layer" ref={canvasRef}
                         className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
                         <path d="M 230 260 C 265 260, 265 260, 300 260" className="connection-line"></path>
                         <circle cx="230" cy="260" r="3" fill="#475569"></circle>
@@ -568,6 +866,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 gap-x-8 gap-y-8 items-start">
                 {/* Left: Service Navigation */}
                 <div className="lg:col-span-5 flex flex-col gap-4 gap-x-4 gap-y-4" id="service-nav-container"><button
+                        onClick={() => setServiceIndex(0)}
                         className="group w-full text-left p-4 rounded-xl transition-all duration-300 relative flex items-center gap-5 border-2 cursor-pointer bg-white dark:bg-[#161b22] border-blue-200 dark:border-blue-500/30 shadow-lg scale-[1.02] z-10 bg-blue-50 dark:bg-blue-900/20">
                         <div
                             className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 bg-blue-600 text-white shadow-md group-hover:rotate-6">
@@ -596,6 +895,7 @@ export default function Home() {
                                 <path d="m12 5 7 7-7 7"></path>
                             </svg></div>
                     </button><button
+                        onClick={() => setServiceIndex(1)}
                         className="group w-full text-left p-4 rounded-xl transition-all duration-300 relative flex items-center gap-5 border-2 cursor-pointer bg-transparent border-transparent hover:bg-white dark:hover:bg-white/5 hover:shadow-md hover:scale-[1.01] opacity-70 hover:opacity-100">
                         <div
                             className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 bg-white dark:bg-white/10 text-slate-400 group-hover:text-orange-500 shadow-sm group-hover:rotate-6">
@@ -636,6 +936,7 @@ export default function Home() {
                                 <path d="m12 5 7 7-7 7"></path>
                             </svg></div>
                     </button><button
+                        onClick={() => setServiceIndex(2)}
                         className="group w-full text-left p-4 rounded-xl transition-all duration-300 relative flex items-center gap-5 border-2 cursor-pointer bg-transparent border-transparent hover:bg-white dark:hover:bg-white/5 hover:shadow-md hover:scale-[1.01] opacity-70 hover:opacity-100">
                         <div
                             className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 bg-white dark:bg-white/10 text-slate-400 group-hover:text-emerald-500 shadow-sm group-hover:rotate-6">
@@ -664,6 +965,7 @@ export default function Home() {
                                 <path d="m12 5 7 7-7 7"></path>
                             </svg></div>
                     </button><button
+                        onClick={() => setServiceIndex(3)}
                         className="group w-full text-left p-4 rounded-xl transition-all duration-300 relative flex items-center gap-5 border-2 cursor-pointer bg-transparent border-transparent hover:bg-white dark:hover:bg-white/5 hover:shadow-md hover:scale-[1.01] opacity-70 hover:opacity-100">
                         <div
                             className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 bg-white dark:bg-white/10 text-slate-400 group-hover:text-purple-500 shadow-sm group-hover:rotate-6">
@@ -709,8 +1011,8 @@ export default function Home() {
 
                         {/* Large Background Number */}
                         <div id="service-bg-number"
-                            className="absolute -top-12 right-0 text-[200px] leading-none font-bold select-none pointer-events-none transition-colors duration-500 opacity-[0.07] dark:opacity-[0.1] font-geist tracking-tighter text-blue-500 dark:text-blue-400">
-                            01</div>
+                            className={`absolute -top-12 right-0 text-[200px] leading-none font-bold select-none pointer-events-none transition-colors duration-500 opacity-[0.07] dark:opacity-[0.1] font-geist tracking-tighter ${theme.text}`}>
+                            {String(serviceIndex + 1).padStart(2, '0')}</div>
 
                         <div className="flex flex-col md:p-12 h-full z-10 pt-10 pr-10 pb-10 pl-10 relative service-fade-enter-active"
                             id="service-content-wrapper">
@@ -737,35 +1039,20 @@ export default function Home() {
                             {/* Title & Desc */}
                             <h3 id="service-title"
                                 className="text-4xl font-semibold text-slate-900 dark:text-white mb-6 tracking-tight">
-                                Business Process Automation</h3>
+                                {service.title}</h3>
                             <p id="service-desc"
                                 className="text-lg text-slate-600 dark:text-gray-300 mb-10 leading-relaxed max-w-lg">
-                                Eliminate manual bottlenecks with self-healing, event-driven architectures. We build
-                                workflows that run 24/7 without supervision.</p>
+                                {service.desc}</p>
 
                             {/* Features Grid */}
                             <div id="service-features"
                                 className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 mb-12 border-t border-slate-200/60 dark:border-white/5 pt-8">
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></div>
-                                    <span className="text-base text-slate-700 dark:text-gray-300 font-medium">Custom API
-                                        Integrations</span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></div>
-                                    <span className="text-base text-slate-700 dark:text-gray-300 font-medium">Error
-                                        Handling</span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></div>
-                                    <span className="text-base text-slate-700 dark:text-gray-300 font-medium">Instant
-                                        Sync</span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></div>
-                                    <span className="text-base text-slate-700 dark:text-gray-300 font-medium">Cron
-                                        Jobs</span>
-                                </div>
+                                {service.features.map(f => (
+                                  <div key={f} className="flex items-start gap-3">
+                                    <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${theme.text.replace('text-', 'bg-')}`}></div>
+                                    <span className="text-base text-slate-700 dark:text-gray-300 font-medium">{f}</span>
+                                  </div>
+                                ))}
                             </div>
 
                             {/* CTA */}
@@ -1597,7 +1884,7 @@ export default function Home() {
                 </div>
 
                 <div className="hidden md:flex gap-2">
-                    <button id="bs-ext-prev"
+                    <button id="bs-ext-prev" onClick={prevBlog} style={{cursor:'pointer'}}
                         className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1606,7 +1893,7 @@ export default function Home() {
                             <path d="M19 12H5"></path>
                         </svg>
                     </button>
-                    <button id="bs-ext-next"
+                    <button id="bs-ext-next" onClick={nextBlog} style={{cursor:'pointer'}}
                         className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1640,27 +1927,23 @@ export default function Home() {
                                 {/* Meta */}
                                 <div className="flex items-center gap-4 animate-fade-in-up" style={{ transition: "none" }}>
                                     <span id="bs-category"
-                                        className="px-3 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-gray-300 uppercase tracking-wider border border-slate-200 dark:border-white/5">AI
-                                        Technology</span>
+                                        className="px-3 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-gray-300 uppercase tracking-wider border border-slate-200 dark:border-white/5">{blogPost.category}</span>
                                     <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-gray-600"></div>
                                     <span id="bs-read-time"
-                                        className="text-sm text-slate-500 dark:text-gray-500 font-mono">5 min read</span>
+                                        className="text-sm text-slate-500 dark:text-gray-500 font-mono">{blogPost.readTime}</span>
                                 </div>
 
                                 {/* Title */}
                                 <h3 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white leading-[1.1] tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300"
                                     style={{ transition: "none" }}>
                                     <a href="#" id="bs-title"
-                                        className="hover:underline decoration-2 underline-offset-4 decoration-blue-500/30">The
-                                        Future of Autonomous Agents in Enterprise</a>
+                                        className="hover:underline decoration-2 underline-offset-4 decoration-blue-500/30">{blogPost.title}</a>
                                 </h3>
 
                                 {/* Excerpt */}
                                 <p id="bs-excerpt"
                                     className="text-lg text-slate-600 dark:text-gray-400 leading-relaxed max-w-xl"
-                                    style={{ transition: "none" }}>Manual data entry is obsolete. Learn how multi-agent
-                                    systems are self-organizing to enrich leads, schedule meetings, and update deal
-                                    stages without human intervention.</p>
+                                    style={{ transition: "none" }}>{blogPost.excerpt}</p>
                             </div>
 
                             {/* Footer */}
@@ -1669,7 +1952,7 @@ export default function Home() {
                                 <div className="flex items-center gap-4" style={{ transition: "none" }}>
                                     <div className="relative">
                                         <img id="bs-avatar"
-                                            src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=100&amp;q=80"
+                                            src={blogPost.avatar}
                                             className="w-12 h-12 rounded-full object-cover ring-2 ring-white dark:ring-[#161b22]"
                                             alt="Author" />
                                         <div
@@ -1677,8 +1960,7 @@ export default function Home() {
                                         </div>
                                     </div>
                                     <div className="">
-                                        <p id="bs-author" className="text-sm font-bold text-slate-900 dark:text-white">Alex
-                                            Morgan</p>
+                                        <p id="bs-author" className="text-sm font-bold text-slate-900 dark:text-white">{blogPost.author}</p>
                                         <p id="bs-date" className="text-xs text-slate-500 dark:text-gray-500 font-medium">
                                             Oct 24, 2023</p>
                                     </div>
