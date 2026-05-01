@@ -39,7 +39,7 @@ export default function AIIntegration() {
                     to="/contact"
                     className="text-white bg-[#f0942e] hover:bg-[#e28b2b] hover:shadow-[0_0_20px_rgba(240,148,46,0.4)] font-medium rounded-lg text-base px-8 py-4 transition-all duration-300 inline-flex items-center gap-2"
                   >
-                    Book Your Free AI Readiness Audit
+                    Book Strategy Session
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </div>
@@ -282,7 +282,7 @@ export default function AIIntegration() {
                     to="/contact"
                     className="text-white bg-[#f0942e] hover:bg-[#e28b2b] hover:shadow-[0_0_20px_rgba(240,148,46,0.4)] font-medium rounded-xl text-lg px-10 py-4 transition-all duration-300 inline-flex items-center gap-2"
                   >
-                    Book Your Free Audit
+                    Book Strategy Session
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                   <Link

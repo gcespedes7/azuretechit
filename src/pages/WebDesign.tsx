@@ -410,7 +410,7 @@ export default function WebDesign() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/contact" className="px-10 py-4 bg-[#0B0E14] text-white rounded-xl font-medium text-lg hover:bg-[#161b22] hover:scale-[1.02] transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
-                Book Your Discovery Audit
+                Book Strategy Session
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
               </Link>
               <Link to="/about" className="px-10 py-4 bg-transparent border-2 border-white/30 text-white rounded-xl font-medium text-lg hover:bg-white/10 transition-all duration-300">

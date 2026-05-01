@@ -228,7 +228,7 @@ export default function SocialMedia() {
                 <p className="text-white/80 mb-8 max-w-sm">Built for growing businesses that need consistent visibility — without a full-time marketing team.</p>
                 <div>
                   <Link to="/contact" className="inline-block px-8 py-3 bg-white text-[#f0942e] rounded-lg font-medium hover:bg-orange-50 transition-colors">
-                    Book Your Free Audit
+                    Book Strategy Session
                   </Link>
                 </div>
               </div>
@@ -311,7 +311,7 @@ export default function SocialMedia() {
               to="/contact"
               className="bg-[#f0942e] text-white px-10 py-4 rounded-xl font-medium text-lg hover:bg-[#e28b2b] hover:shadow-[0_0_20px_rgba(240,148,46,0.4)] transition-all duration-300 whitespace-nowrap"
             >
-              Book Your Tech Audit
+              Book Strategy Session
             </Link>
           </div>
         </div>

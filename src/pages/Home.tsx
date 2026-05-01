@@ -88,6 +88,7 @@ const SERVICES = [
     color: 'blue',
     colorHex: '#3b82f6',
     features: ['Custom API Integrations', 'Error Handling', 'Instant Sync', 'Cron Jobs'],
+    cta: 'Automate Operations',
   },
   {
     id: 'ai',
@@ -97,6 +98,7 @@ const SERVICES = [
     color: 'orange',
     colorHex: '#f97316',
     features: ['Smart Chatbots', 'Predictive Analytics', 'Document Processing', 'Decision Automation'],
+    cta: 'Explore AI Solutions',
   },
   {
     id: 'web',
@@ -106,6 +108,7 @@ const SERVICES = [
     color: 'emerald',
     colorHex: '#10b981',
     features: ['React / Next.js', 'Headless CMS', 'PWA Support', 'Interactive UI'],
+    cta: 'Start My Project',
   },
   {
     id: 'social',
@@ -115,6 +118,7 @@ const SERVICES = [
     color: 'purple',
     colorHex: '#a855f7',
     features: ['Content Scheduling', 'Audience Analytics', 'Trend Monitoring', 'Multi-platform Sync'],
+    cta: 'Grow My Presence',
   },
 ]
 
@@ -380,7 +384,7 @@ export default function Home() {
                                     <div className="flex-1 text-left">
                                         <p
                                             className="group-hover:text-blue transition-colors duration-300 text-sm font-bold text-black font-geist drop-shadow-sm">
-                                            See our Work
+                                            Book a Strategy Session
                                         </p>
                                     </div>
                                     <div
@@ -1059,7 +1063,7 @@ export default function Home() {
                             <div className="mt-auto flex items-center gap-6">
                                 <button id="service-cta"
                                     className="inline-flex items-center gap-2 text-base font-semibold px-6 py-3.5 rounded-xl text-white transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 bg-blue-600 hover:bg-blue-700">
-                                    Automate Operations
+                                    {service.cta}
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                         strokeLinejoin="round" className="lucide lucide-arrow-right">
@@ -1119,10 +1123,15 @@ export default function Home() {
                     </h2>
 
                     {/* Description */}
-                    <p className="text-lg text-slate-600 leading-relaxed mb-12">
+                    <p className="text-lg text-slate-600 leading-relaxed mb-6">
                         Most websites are digital brochures that collect dust. We build intelligent platforms that
                         capture leads,
                         answer questions, and sync data directly to your CRM—24/7, without lifting a finger.
+                    </p>
+
+                    {/* Free review hint */}
+                    <p className="text-base text-indigo-600 font-medium leading-relaxed mb-12">
+                        Hit the button below for a free, instant review of your website — we'll walk through what's working, what's hurting your conversions, and the exact changes that would make the biggest difference.
                     </p>
 
                     {/* Feature List */}
@@ -1205,7 +1214,7 @@ export default function Home() {
                                     <i className="point"></i>
                                 </div>
 
-                                <span className="inner">Get Free Audit <svg className="icon" fill="none" stroke="currentColor"
+                                <span className="inner">Review my website <svg className="icon" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" strokeLinecap="round"
                                         strokeLinejoin="round" strokeWidth="1.5">
                                         <path d="M5 12h14"></path>

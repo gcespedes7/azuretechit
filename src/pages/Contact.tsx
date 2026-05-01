@@ -109,7 +109,7 @@ export default function Contact() {
             <div className="lg:col-span-5 space-y-10">
               <div className="space-y-5">
                 <h2 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">
-                  Book Your Free<br />Automation Audit
+                  Book a Strategy Session
                 </h2>
                 <p className="text-slate-500 dark:text-gray-400 leading-relaxed">
                   Stop guessing where your bottlenecks are. In 45 minutes, we'll map your current processes and
